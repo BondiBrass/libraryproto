@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Band Library Reviews</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="left">
+      <div class="logo">Band Library Reviews</div>
+      <span id="modePill" class="pill tiny"></span>
+    </div>
+
+    <div class="right">
+      <input id="emailInput" placeholder="you@email.com" autocomplete="email" />
+      <button id="loginBtn" class="btn secondary">Sign in</button>
+      <span id="loginStatus" class="muted">Guest (view-only)</span>
+      <button id="reloadBtn" class="btn secondary">Reload</button>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <div id="banner" class="banner" style="display:none;"></div>
+
+    <div class="toolbar">
+      <input id="search" placeholder="Search title / composer / notes…" />
+      <div id="classPills" class="pills"></div>
+    </div>
+
+    <div class="row space-between">
+      <div id="stats" class="muted"></div>
+      <button id="dashBtn" class="btn secondary" style="display:none;">Dashboard</button>
+    </div>
+
+    <section id="dashboard" class="dashboard" style="display:none;"></section>
+
+    <div id="cards" class="cards"></div>
+
+    <div class="row" style="margin-top:12px;">
+      <button id="loadMoreBtn" class="btn secondary" style="display:none;">Load more</button>
+    </div>
+  </main>
+
+  <iframe name="postTarget" style="display:none;"></iframe>
+  <script src="app.js"></script>
+</body>
+</html>
