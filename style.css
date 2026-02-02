@@ -1001,3 +1001,21 @@ body.theme-dark .mediaBtn{
 .searchRow{ justify-content: space-between; }
 .searchRow input#search{ flex: 1 1 auto; }
 #clearAllBtn{ margin-left: 10px; }
+
+
+/* ===== Mobile: bigger text + 1 card per row ===== */
+@media (max-width: 640px){
+  body{ font-size: 17px; line-height: 1.5; }
+  .muted{ font-size: 0.95rem; }
+  .pill, .tag{ font-size: 0.95rem; }
+  .card h3, .card .title{ font-size: 1.12rem; }
+  .cards{
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 12px;
+  }
+  .card{
+    width: 100%;
+  }
+}
+/* Keep desktop grid behavior unchanged */
