@@ -3,35 +3,96 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Band Library Reviews</title>
+  <title>BBLib</title>
   <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,400,0,0" />
 </head>
-<body>
+<body class="theme-light locked">
+  <!-- Top bar -->
   <header class="topbar">
     <div class="left">
-      <div class="logo">Band Library Reviews</div>
-      <span id="modePill" class="pill tiny"></span>
+      <button id="hamburgerBtn" class="iconBtn" aria-label="Menu" title="Menu">☰</button>
+      <img class="brandLogo" src="images/bb_gen_logo.png" alt="BBLib logo" />
+      <div class="brandTitle">
+        <div class="brandName">BBLib</div>
+        <div class="brandSub muted">Band Library Reviews</div>
+      </div>
+      <span id="modePill" class="pill tiny" style="display:none;"></span>
     </div>
 
     <div class="right">
-      <input id="emailInput" placeholder="you@email.com" autocomplete="email" />
-      <button id="loginBtn" class="btn secondary">Sign in</button>
-      <span id="loginStatus" class="muted">Guest (view-only)</span>
-      <button id="reloadBtn" class="btn secondary">Reload</button>
+      <span id="loginStatus" class="muted">Not logged in</span>
+            <button id="signinBtn" class="btn secondary" type="button">Sign in</button>
+<button id="reloadBtn" class="btn secondary" type="button">Reload</button>
     </div>
   </header>
 
+  <!-- Slide-out menu -->
+  <aside id="menuPanel" class="panel">
+    <div class="panelHead">
+      <div class="panelTitle">BBLib menu</div>
+      <button id="closeMenuBtn" class="iconBtn" aria-label="Close" title="Close">✕</button>
+    </div>
+
+    <div class="panelBody">
+      <div class="row space-between" style="align-items:center;">
+        <div>
+          <div class="muted tiny">Theme</div>
+          <div class="row" style="gap:8px;margin-top:6px;">
+            <button id="themeLightBtn" class="btn secondary" type="button">Light</button>
+            <button id="themeDarkBtn" class="btn secondary" type="button">Dark</button>
+          </div>
+        </div>
+      </div>
+
+      <hr class="sep" />
+
+      <div class="muted tiny">Mode</div>
+      <div class="muted" id="modeText" style="margin-top:6px;">Prototype (login required)</div>
+
+      <hr class="sep" />
+
+      <button id="logoutBtn" class="btn" type="button">Log out</button>
+
+      <div class="muted tiny" style="margin-top:12px;">
+        Tip: use <code>?mode=public</code> for read-only browsing (if enabled in index.js).
+      </div>
+    </div>
+  </aside>
+  <div id="panelScrim" class="scrim" aria-hidden="true"></div>
+
+  <!-- Main -->
   <main class="wrap">
     <div id="banner" class="banner" style="display:none;"></div>
 
-    <div class="toolbar">
-      <input id="search" placeholder="Search title / composer / notes…" />
+    
+  <div class="toolbar">
+    <div class="searchRow">
+      <span class="msi">search</span>
+      <input id="search" placeholder="Search title / composer / notes… eg  holst" />
+      <button id="clearAllBtn" class="btn tiny secondary is-hidden" type="button"><span class="msi">restart_alt</span>Clear all</button>
+    </div>
+
+    <div class="filterBlock">
+      <div class="filterHeader">
+
+
+      </div>
       <div id="classPills" class="pills"></div>
     </div>
 
-    <div class="row space-between">
+    <div class="filterBlock">
+      <div class="filterHeader">
+
+      </div>
+      <div id="genrePills" class="pills"></div>
+    </div>
+  </div>
+
+  <div class="row space-between">
+
       <div id="stats" class="muted"></div>
-      <button id="dashBtn" class="btn secondary" style="display:none;">Dashboard</button>
+      <button id="dashBtn" class="btn secondary" type="button" style="display:none;">Dashboard</button>
     </div>
 
     <section id="dashboard" class="dashboard" style="display:none;"></section>
@@ -39,11 +100,217 @@
     <div id="cards" class="cards"></div>
 
     <div class="row" style="margin-top:12px;">
-      <button id="loadMoreBtn" class="btn secondary" style="display:none;">Load more</button>
+      <button id="loadMoreBtn" class="btn secondary" type="button" style="display:none;">Load more</button>
     </div>
   </main>
 
+  <!-- Login modal -->
+  <div id="loginBackdrop" class="modalBackdrop open" role="dialog" aria-modal="true" aria-label="Sign in">
+    <div class="modal">
+      <div class="modalHead">
+        <img class="modalLogo" src="images/bb_gen_logo.png" alt="BBLib logo" />
+        <div>
+          <div class="modalTitle">Welcome to BBLib</div>
+          <div class="muted">Sign in to vote and leave comments.</div>
+        </div>
+      </div>
+
+      <div class="modalBody">
+        <label class="muted tiny" for="loginEmail">Email address</label>
+        <input id="loginEmail" placeholder="you@email.com" autocomplete="email" />
+        <div class="row" style="gap:8px;margin-top:10px;">
+          <button id="loginConfirmBtn" class="btn" type="button">Sign in</button>
+          <button id="loginGuestBtn" class="btn secondary" type="button">Continue as guest</button>
+        </div>
+        <div class="muted tiny" style="margin-top:10px;">
+          Prototype note: Email lets you vote and comment. Guest mode is read-only.
+        </div>
+      </div>
+    </div>
+  </div>
+
   <iframe name="postTarget" style="display:none;"></iframe>
+
+  <script>
+  // --- BBLibAuth: lightweight, localStorage-based identity ---
+  (function(){
+    const LS_KEY = "bblib_user_email";
+    const GUEST_KEY = "bblib_guest";
+    const qp = new URLSearchParams(location.search);
+    const isPublic = (qp.get("mode")||"").toLowerCase() === "public";
+    const body = document.body;
+
+    const $ = (id)=>document.getElementById(id);
+    const loginBackdrop = $("loginBackdrop");
+    const loginEmail = $("loginEmail");
+    const loginConfirmBtn = $("loginConfirmBtn");
+    const loginCancelBtn = $("loginCancelBtn");
+    const loginGuestBtn = $("loginGuestBtn");
+    const loginStatus = $("loginStatus");
+
+    function getUserEmail(){
+      return (localStorage.getItem(LS_KEY) || "").trim();
+    }
+    function isGuest(){
+      return localStorage.getItem(GUEST_KEY) === "1";
+    }
+    function setUserEmail(email){
+      localStorage.setItem(LS_KEY, (email||"").trim());
+      localStorage.removeItem(GUEST_KEY);
+      window.dispatchEvent(new CustomEvent("bblib:auth-changed"));
+    }
+    function setGuest(){
+      localStorage.removeItem(LS_KEY);
+      localStorage.setItem(GUEST_KEY, "1");
+      window.dispatchEvent(new CustomEvent("bblib:auth-changed"));
+    }
+    function clearUserEmail(){
+      localStorage.removeItem(LS_KEY);
+      localStorage.removeItem(GUEST_KEY);
+      window.dispatchEvent(new CustomEvent("bblib:auth-changed"));
+    }
+    function requireUserEmail(){
+      const email = getUserEmail();
+      if(email) return email;
+      if(isPublic) return null;
+      openLogin();
+      return null;
+    }
+
+    function openLogin(){
+      if(isPublic){
+        // public read-only: no modal lock
+        body.classList.remove("locked");
+        loginBackdrop.classList.remove("open");
+        loginStatus.textContent = "Public mode";
+        return;
+      }
+      body.classList.add("locked");
+      loginBackdrop.classList.add("open");
+      setTimeout(()=>loginEmail.focus(), 50);
+    }
+    function closeLogin(){
+      body.classList.remove("locked");
+      loginBackdrop.classList.remove("open");
+    }
+
+    function syncHeader(){
+      const email = getUserEmail();
+      if(isPublic){
+        loginStatus.textContent = "Public mode";
+        closeLogin();
+        return;
+      }
+      if(email){
+        loginStatus.textContent = email;
+        closeLogin();
+        return;
+      }
+      if(isGuest()){
+        loginStatus.textContent = "Guest (read-only)";
+        closeLogin();
+        return;
+      }
+      loginStatus.textContent = "Not logged in";
+      openLogin();
+    }
+
+    loginConfirmBtn.addEventListener("click", ()=>{
+      const v = (loginEmail.value||"").trim();
+      if(!v || !v.includes("@")){
+        alert("Please enter a valid email address.");
+        return;
+      }
+      setUserEmail(v);
+      syncHeader();
+    });
+
+    loginGuestBtn.addEventListener("click", ()=>{
+      // Guest mode: browse/search, but no voting/comments
+      setGuest();
+      syncHeader();
+    });
+
+    if (loginCancelBtn) {
+
+
+      loginCancelBtn.addEventListener("click", ()=>{
+
+
+        // Keep cancel for backwards compatibility
+
+
+              alert("Use ‘Continue as guest’ for read-only browsing, or sign in to vote/comment.");
+
+
+      });
+
+
+    }
+window.BBLibAuth = { getUserEmail, requireUserEmail, clearUserEmail, openLogin, isGuest };
+
+    // initial
+    syncHeader();
+
+    // Menu + theme
+    const menuPanel = $("menuPanel");
+    const scrim = $("panelScrim");
+    const hamburgerBtn = $("hamburgerBtn");
+    const closeMenuBtn = $("closeMenuBtn");
+    const themeLightBtn = $("themeLightBtn");
+    const themeDarkBtn = $("themeDarkBtn");
+    const logoutBtn = $("logoutBtn");
+
+        const signinBtn = $("signinBtn");
+function openMenu(){ menuPanel.classList.add("open"); scrim.classList.add("open"); }
+    function closeMenu(){ menuPanel.classList.remove("open"); scrim.classList.remove("open"); }
+    hamburgerBtn.addEventListener("click", openMenu);
+    closeMenuBtn.addEventListener("click", closeMenu);
+    scrim.addEventListener("click", closeMenu);
+
+    const THEME_KEY = "bblib_theme";
+    function applyTheme(t){
+      const theme = (t==="dark") ? "dark" : "light";
+      localStorage.setItem(THEME_KEY, theme);
+      body.classList.toggle("theme-dark", theme==="dark");
+      body.classList.toggle("theme-light", theme!=="dark");
+    }
+    themeLightBtn.addEventListener("click", ()=>applyTheme("light"));
+    themeDarkBtn.addEventListener("click", ()=>applyTheme("dark"));
+    applyTheme("light");
+    // Note: user can switch to dark via the menu; we intentionally start light.
+
+    logoutBtn.addEventListener("click", ()=>{
+      clearUserEmail();
+      loginEmail.value = "";
+      closeMenu();
+      openLogin();
+    });
+
+    logoutBtn.addEventListener("click", ()=>{
+      clearUserEmail();
+      loginEmail.value = "";
+      closeMenu();
+      openLogin();
+    });
+
+    
+    if (signinBtn) {
+      signinBtn.addEventListener("click", ()=>{
+        // Clear any guest/email state and reopen the modal
+        localStorage.removeItem(GUEST_KEY);
+        localStorage.removeItem(LS_KEY);
+        loginEmail.value = "";
+        closeMenu();
+        openLogin();
+      });
+    }
+
+// expose a reload hook
+    window.addEventListener("bblib:auth-changed", syncHeader);
+  })();
+  </script>
+
   <script src="app.js"></script>
 </body>
 </html>
